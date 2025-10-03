@@ -1,81 +1,86 @@
-# Portfolio VaR & ES Analysis
+# Monte Carlo Value-at-Risk (VaR) and Expected Shortfall (ES) for a Multi-Asset Portfolio
 
-This repository contains the code from my project on quantifying portfolio downside risk using Value-at-Risk (VaR) and Expected Shortfall (ES). It uses historical ETF data, Monte Carlo simulation, and a parametric normal approximation to estimate potential losses, and validates results through a simple backtest.
-
-The project involved: collecting and cleaning ETF price data (SPY, EFA, IEMG, AGG); computing log and arithmetic returns with proper alignment of tickers and weights; estimating mean returns and covariance matrices; running large-scale Monte Carlo simulations (200k+ paths) with Cholesky decomposition; calculating VaR and ES at 95% confidence for a £1M portfolio; performing a backtest of historical VaR breaches to check calibration; and stress-testing diversification by applying correlation-shock scenarios. Relevance: practical quantitative risk management, statistical modeling, and reproducible financial analysis in Python.
-
----
-
-## Repository Structure
-
-notebooks/
-  portfolio_var_es.ipynb     — Main notebook (simulation, VaR/ES, backtests)
-assets/                      — Example plots (P&L histograms, correlation matrices)
-requirements.txt             — Python dependencies
-README.md
-LICENSE
-
----
-
-## Quickstart
-
-Clone the repository and set up a virtual environment:
-
-$ git clone https://github.com/joshdpaterson/portfolio-var-es
-$ cd portfolio-var-es
-$ python -m venv .venv
-$ source .venv/bin/activate    (Windows: .venv\Scripts\activate)
-$ pip install -r requirements.txt
-$ jupyter notebook
-
-Open notebooks/portfolio_var_es.ipynb and run the cells in order. The notebook will download data, run simulations, and generate risk metrics.
+This repository contains a concise, single-notebook implementation of **portfolio risk estimation** using **Monte Carlo simulation**, **parametric (normal) VaR**, **Expected Shortfall (ES)**, and a simple **backtest**. The portfolio includes representative ETFs for US equities, developed ex-US equities, emerging market equities, and US bonds. Historical data are downloaded with **yfinance** and daily P&L is simulated under both **log-return** and **arithmetic-return** assumptions.
 
 ---
 
 ## Project Overview
+- Build a diversified **equity–bond** portfolio with user-specified tickers and weights  
+- Download and clean historical price data (adjusted close)  
+- Compute **log** and **arithmetic** returns and estimate mean/covariance  
+- Run **Monte Carlo** simulations to obtain the P&L distribution  
+- Compute **VaR** and **ES** at a configurable confidence (default 95%)  
+- Compare **Monte Carlo VaR** to **parametric (normal) VaR**  
+- **Backtest** the parametric VaR on historical returns (breach count & rate)  
+- (Optional) Run a **correlation shock** scenario to probe sensitivity
 
-Data Preparation — Fetches adjusted close prices via yfinance (2015–present); computes log returns (for modeling) and arithmetic returns (for realized P&L); validates alignment between tickers, weights, and covariance matrices.
+**Key Findings (from the default example run):**  
+- Monte Carlo and parametric VaR estimates are closely aligned (~£14.8k, 1-day, 95%)  
+- ES(95%) is around £18.6k for the same setup  
+- Backtesting shows a breach rate near 4% with 95% VaR, consistent with expectations
 
-Monte Carlo Simulation — Generates correlated return scenarios with Cholesky decomposition; supports both log-return and arithmetic-return models; produces a simulated distribution of portfolio P&L.
+---
 
-Risk Metrics — Value-at-Risk (VaR): worst loss not exceeded with 95% probability. Expected Shortfall (ES): average loss in the worst 5% of cases. Both are computed from the simulated distribution and compared with a parametric normal approximation.
+## Repository Structure
+    notebooks/
+      Portfolio_VaR_ES.ipynb        # Single notebook with data load, simulation, VaR/ES, backtest, and scenario
+    assets/                         # Output Figure
+    README.md
+    requirements.txt
+    LICENSE
 
-Backtesting — Compares historical portfolio returns to the parametric 95% VaR; reports breach rate (e.g., ~4% vs expected 5%, slightly conservative).
+---
 
-Stress Testing — Applies a correlation shock that blends off-diagonal correlations toward a target (e.g., ρ = 0.25 or ρ = 0.9) to explore diversification breakdowns when markets move together.
+## Quickstart
+Clone and set up a virtual environment, then launch Jupyter.
+
+    git clone https://github.com/joshdpaterson/portfolio-var-es
+    cd portfolio-var-es
+    python -m venv .venv
+    source .venv/bin/activate        # Windows: .venv\Scripts\activate
+    pip install -r requirements.txt
+    jupyter notebook
+
+Open the single notebook in the `notebooks/` directory and run the cells top-to-bottom.
+
+---
+
+## Example Workflow (Portfolio_VaR_ES.ipynb)
+- Define **tickers** and **weights** (must sum to 1) and set capital, horizon, and confidence level  
+- Download prices with **yfinance**, compute daily returns, inspect volatilities and correlations  
+- Choose the **return model** (log or arithmetic) and estimate μ and Σ  
+- Draw shocks with **Cholesky** to simulate multi-asset returns → portfolio P&L  
+- Report **mean**, **volatility**, **VaR**, and **ES** from the simulated distribution  
+- Compute **parametric VaR** using normal approximation and compare to Monte Carlo  
+- **Backtest** the parametric VaR on historical portfolio returns (breaches & breach rate)  
+- (Optional) Apply a **correlation shock** to explore sensitivity of VaR
 
 ---
 
 ## Technical Stack
-
-Python (numpy, pandas, matplotlib); yfinance for historical data; Jupyter Notebooks for reproducibility; Monte Carlo methods and basic risk statistics.
-
----
-
-## Key Concepts
-
-Log vs arithmetic returns; label-safe portfolio math to avoid misalignment; multivariate normal simulation via Cholesky; VaR vs ES (quantile vs tail mean); backtesting breach rates; correlation shocks as a simple systemic-risk stress test.
+- **Python**: numpy, pandas, matplotlib  
+- **Data**: yfinance (adjusted close prices)  
+- **Stats/Sim**: numpy RNG + Cholesky for correlated draws; NormalDist for z-scores  
+- **Notebook**: single Jupyter notebook for a reproducible end-to-end workflow
 
 ---
 
-## Results (Example)
+## Results (Default Example Summary)
+- Simulated mean daily return ≈ 0.04%  
+- Simulated daily volatility ≈ 0.93%  
+- **VaR (95%, 1-day, Monte Carlo)** ≈ **£14,800**  
+- **ES (95%, 1-day, Monte Carlo)** ≈ **£18,600**  
+- **Parametric VaR (95%, 1-day)** ≈ **£14,800** (very close to MC)  
+- Backtest breaches ≈ **4%** of days, consistent with a 95% VaR
 
-For a portfolio of 50% SPY, 20% EFA, 15% IEMG, 15% AGG: daily volatility ≈ 0.93%; 1-day 95% VaR ≈ £14,800 (≈1.48% of £1M capital); ES ≈ £18,600; parametric VaR closely matches Monte Carlo; backtest breaches ≈ 4% vs theoretical 5%; lowering equity–equity correlations (ρ → 0.25) reduces VaR, while raising correlations increases VaR.
-
----
-
-## Reproducibility Notes
-
-Default alpha = 95%, horizon = 1 day; weights sum to 1 (0.50, 0.20, 0.15, 0.15); data window 2015–present; fixed random seed for reproducible Monte Carlo.
+> These figures depend on tickers, weights, lookback window, and current market data; re-running will produce updated numbers.
 
 ---
 
 ## License
-
-MIT License — see LICENSE.
+MIT — see `LICENSE`.
 
 ---
 
 ## Contact
-
-Questions or ideas for extensions? Please open an issue or reach out.
+Open an issue if you have questions about the notebook, methodology, or extending the workflow (e.g., different assets, horizons, or confidence levels).
